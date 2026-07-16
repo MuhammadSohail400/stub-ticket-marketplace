@@ -41,17 +41,15 @@ const userSchema = new mongoose.Schema(
 // Concept: Mongoose "pre save" hook runs right before a document is saved.
 // We intercept here to hash the plain-text password — this way every
 // controller that creates/updates a user doesn't have to remember to hash it.
-userSchema.pre("save", async function (next) {
-  if (!this.isModified("password")) return next(); // skip if unchanged
+userSchema.pre("save", async function () {
+  if (!this.isModified("password")) return; // skip if unchanged
 
   const salt = await bcrypt.genSalt(10);
   this.password = await bcrypt.hash(this.password, salt);
-  next();
 });
 
 // Instance method: compare a plain-text login attempt against the stored hash
 userSchema.methods.comparePassword = async function (candidatePassword) {
   return bcrypt.compare(candidatePassword, this.password);
 };
-
 module.exports = mongoose.model("User", userSchema);

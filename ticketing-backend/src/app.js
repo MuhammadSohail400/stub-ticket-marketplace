@@ -19,8 +19,8 @@ app.get("/api/health", (req, res) => {
     timestamp: new Date().toISOString(),
   });
 });
-app.use("/api/auth", require("./routes/authRoutes"));
-
+app.use("/api/auth", require("./routes/authRoute"));
+app.use("/api/events", require("./routes/eventRoutes"));
 app.use(notFound);
 app.use(errorHandler);
 
