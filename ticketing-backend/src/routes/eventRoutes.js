@@ -9,11 +9,11 @@ const multer = require("multer");
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 
-router.post("/events", protect, upload.single("bannerImage"), createEvent);
-router.get("/events", getAllEvents);
-router.get("/events/:id", getEventById);
-router.put("/events/:id", protect, upload.single("bannerImage"), updateEvent);
-router.delete("/events/:id", protect, deleteEvent);
+router.post("/", protect, upload.single("bannerImage"), createEvent);
+router.get("/", getAllEvents);
+router.get("/:id", getEventById);
+router.put("/:id", protect, upload.single("bannerImage"), updateEvent);
+router.delete("/:id", protect, deleteEvent);
 
 module.exports = router;
 

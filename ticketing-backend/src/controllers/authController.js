@@ -6,15 +6,17 @@ const generateToken = require("../utils/generateToken");
 // POST /api/auth/signup
 async function signup(req, res, next) {
   try {
-    const { name, email, password } = req.body;
+    const { name, email, password, role } = req.body;
 
 
     if (!name || !email || !password) {
       res.status(400);
-      throw new Error("Name, email and password are all required");
+      throw new Error("Name, email, password are all required");
     }
 
 
+    const allowedSignupRoles = ["buyer", "seller"];
+    const finalRole = allowedSignupRoles.includes(role) ? role : "buyer";
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       res.status(409); // 409 = Conflict, the standard code for "already exists"
@@ -22,7 +24,7 @@ async function signup(req, res, next) {
     }
 
 
-    const user = await User.create({ name, email, password });
+    const user = await User.create({ name, email, password, role: finalRole });
 
     const token = generateToken(user._id);
 
@@ -88,7 +90,7 @@ async function login(req, res, next) {
 
 async function getMe(req, res, next) {
   try {
-    
+
     res.status(200).json({
       success: true,
       user: req.user,
