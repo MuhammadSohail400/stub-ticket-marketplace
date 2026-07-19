@@ -1,296 +1,231 @@
-# Ticketing Backend - Simple Explanation
+---
 
-This README explains every important part of the backend in a simple and easy way.
+## Phase B1 — Server + Database (completed)
 
-## 1. What is this project?
+- Express server (`server.js`) that connects to MongoDB *before* it
+  starts listening, avoiding a race condition where requests could
+  arrive before the DB connection is ready.
+- Central error handler (`errorHandler.js`) so controllers don't repeat
+  error-response formatting.
+- One test route: `GET /api/health`.
 
-This project is the backend for a ticket resale marketplace. Its job is to handle users, authentication, and future ticket-related actions such as creating listings, buying tickets, and managing sellers and buyers.
+Concepts: MVC-style separation (config / middleware / app kept in
+separate files), loading secrets from `.env`, centralized error handling.
 
-## 2. What is already implemented?
+---
 
-### A. Server setup
+## Phase B2 — Auth (completed)
 
-The server is created using Express.js. The main entry file is server.js. Its role is to start the backend and make it listen on a port.
+- `POST /api/auth/signup` — creates an account, returns a JWT.
+  `role` is optional and restricted to a whitelist (`buyer` or
+  `seller`) — `admin` can never be self-assigned at signup; it must be
+  granted separately by an existing admin.
+- `POST /api/auth/login` — verifies credentials, returns a JWT.
+- `GET /api/auth/me` — protected, returns the logged-in user's own data.
 
-### B. Database connection
+Concepts:
+- Password hashing via a Mongoose `pre('save')` hook on the `User`
+  model — hashing lives on the model, not the controller, so it's
+  guaranteed to run no matter where a user gets created/updated.
+- JWT structure (`header.payload.signature`) — encoded, not encrypted;
+  never put sensitive data in the payload (we only store `user._id`).
+- `protect` middleware — verifies the token, attaches `req.user`, and
+  only calls `next()` if valid. If invalid, the controller never runs.
+- `authorize(...roles)` middleware — separate from `protect`; answers
+  "is this specific user allowed to do this specific action," not
+  just "who are they."
+- `select: false` on the password field — excluded from query results
+  by default; explicitly opted back in with `.select("+password")`
+  only where needed (login).
 
-The project connects to MongoDB using Mongoose. The file src/config/db.js is responsible for connecting the app to the database before the server starts handling requests.
-
-### C. Express app setup
-
-The file src/app.js contains the main Express app. It sets up:
-
-- CORS so the frontend can talk to the backend
-- JSON body parsing so incoming data can be read
-- Logging for requests
-- The health route and auth routes
-
-### D. Health check route
-
-The route GET /api/health is used to confirm that the server is running. It returns a success response if everything is working.
-
-### E. User authentication system
-
-The backend has a basic authentication system. It includes a user model, signup/login logic, password hashing, and JWT-based authentication.
-
-### F. Signup API
-
-The signup API is available at POST /api/auth/signup. When a user signs up, the backend checks if the required fields are present, verifies whether the email already exists, and creates a new user if everything is valid.
-
-### G. Login API
-
-The login API is available at POST /api/auth/login. When a user logs in, the backend checks the email and password. If they match, it creates a JWT token and sends it back to the client.
-
-### H. JWT token system
-
-JWT stands for JSON Web Token. It is used to identify a logged-in user. After login, the backend generates a token, and that token is used for protected routes.
-
-### I. Protected routes
-
-The file src/middleware/auth.js contains the protect middleware. It reads the token from the request header, verifies it, and allows the user to access protected endpoints only if the token is valid.
-
-### J. Role-based access
-
-The auth middleware also supports roles like buyer, seller, and admin. This helps restrict some actions to only certain users.
-
-### K. Error handling
-
-The file src/middleware/errorHandler.js handles errors in one central place. If something goes wrong, the backend returns a clean error response instead of crashing.
-
-### L. Events API
-
-The backend supports event management for ticket listings:
-
-- POST /api/events: protected route to create a new event with `bannerImage` upload. Requires `title`, `description`, `category`, `venue`, `city`, `eventDate`, and `bannerImage`.
-- GET /api/events: public route to list all events. Supports optional query filters `city` and `category`.
-- GET /api/events/:id: public route to fetch details for a single event.
-- PUT /api/events/:id: protected route to update an event. Only the event creator or an admin can update it.
-- DELETE /api/events/:id: protected route to delete an event. Only the event creator or an admin can delete it.
-
-The file src/routes/eventRoutes.js defines these endpoints, and src/controllers/eventController.js contains the business logic.
-
-## 3. Main files and what they do
-
-- server.js: starts the backend server
-- src/app.js: creates the Express app and mounts routes
-- src/config/db.js: connects the app to MongoDB
-- src/controllers/authController.js: contains signup, login, and user profile logic
-- src/controllers/eventController.js: contains event creation, reading, updating, and deletion logic
-- src/routes/authRoute.js: defines authentication routes
-- src/routes/eventRoutes.js: defines event listing and ticketing routes
-- src/models/User.js: defines the User schema and password hashing logic
-- src/middleware/auth.js: checks JWT tokens and protects routes
-- src/middleware/errorHandler.js: handles errors neatly
-- src/utils/generateToken.js: creates JWT tokens
-
-## 4. Project folder structure
-
-`	ext
-ticketing-backend/
-+-- server.js
-+-- src/
-�   +-- app.js
-�   +-- config/
-�   �   +-- db.js
-�   +-- controllers/
-�   �   +-- authController.js
-�   �   +-- eventController.js
-�   +-- middleware/
-�   �   +-- auth.js
-�   �   +-- errorHandler.js
-�   +-- models/
-�   �   +-- User.js
-   +-- routes/
-�   �   +-- authRoute.js
-�   �   +-- eventRoutes.js
-�   +-- utils/
-�       +-- generateToken.js
-`
-
-## 5. Setup instructions
-
-1. Create the environment file:
-   `ash
-cp .env.example .env
-`
-
-2. Add your environment values in .env:
-   - MONGODB_URI
-   - JWT_SECRET
-   - JWT_EXPIRES_IN (optional)
-
-3. Install dependencies:
-   `ash
-npm install
-`
-
-4. Start the backend:
-   `ash
-npm run dev
-`
-
-## 6. How to test the backend
-
-Open the browser or use Postman/Thunder Client and try the examples below. Replace `:PORT` with the port your server uses (default `5000`).
-
-Health check
-
-`bash
-GET http://localhost:5000/api/health
-`
-
-Expected response:
-
-```json
-{
-  "success": true,
-  "message": "Stub API is running",
-  "timestamp": "<ISO timestamp>"
-}
-```
-
-Authentication examples (Postman or curl)
-
-- Signup (create user)
+### Auth examples
 
 ```bash
 curl -X POST http://localhost:5000/api/auth/signup \
-   -H "Content-Type: application/json" \
-   -d '{"name":"Alice","email":"alice@example.com","password":"password123","role":"seller"}'
+  -H "Content-Type: application/json" \
+  -d '{"name":"Alice","email":"alice@example.com","password":"password123","role":"seller"}'
 ```
-
-Sample successful response:
-
-```json
-{
-  "success": true,
-  "user": {
-    "_id": "<userId>",
-    "name": "Alice",
-    "email": "alice@example.com",
-    "role": "seller"
-  },
-  "token": "<jwt-token>"
-}
-```
-
-- Login
 
 ```bash
 curl -X POST http://localhost:5000/api/auth/login \
-   -H "Content-Type: application/json" \
-   -d '{"email":"alice@example.com","password":"password123"}'
+  -H "Content-Type: application/json" \
+  -d '{"email":"alice@example.com","password":"password123"}'
 ```
-
-Sample successful response:
-
-```json
-{
-  "success": true,
-  "user": {
-    "_id": "<userId>",
-    "name": "Alice",
-    "email": "alice@example.com",
-    "role": "seller"
-  },
-  "token": "<jwt-token>"
-}
-```
-
-Events API examples
-
-- List events (public, optional filters)
 
 ```bash
-curl "http://localhost:5000/api/events?city=Karachi&category=Music"
+curl http://localhost:5000/api/auth/me \
+  -H "Authorization: Bearer <jwt-token>"
 ```
 
-Sample response:
+---
 
-```json
-{
-  "success": true,
-  "events": [
-    /* array of event objects */
-  ]
-}
-```
+## Phase B3 — Events (completed)
 
-- Get event by id
+- `GET /api/events` — public, list all events. Supports `?city=` and
+  `?category=` query filters (case-insensitive, matched at the
+  database level, not filtered in JS after fetching everything).
+- `GET /api/events/:id` — public, single event detail.
+- `POST /api/events` — protected, create an event.
+- `PATCH /api/events/:id` — protected, only the event's creator (or an
+  admin) can update.
+- `DELETE /api/events/:id` — protected, only the event's creator (or an
+  admin) can delete.
+
+Concepts: REST conventions (GET/POST/PATCH/DELETE), Mongoose relations
+(`ref` + `.populate()`), and — the most important lesson from this
+phase — **ownership authorization must be checked *before* the write
+operation, never after.** (An earlier draft checked authorization after
+calling `findByIdAndDelete`, meaning the delete had already happened by
+the time the 403 was returned.)
+
+### Events examples
 
 ```bash
-curl http://localhost:5000/api/events/<eventId>
+curl "http://localhost:5000/api/events?city=Karachi&category=concert"
 ```
-
-- Create event (protected, multipart form-data upload for `bannerImage`)
 
 ```bash
 curl -X POST http://localhost:5000/api/events \
-   -H "Authorization: Bearer <jwt-token>" \
-   -F "title=My Concert" \
-   -F "description=An evening of music" \
-   -F "category=Music" \
-   -F "venue=Hall 1" \
-   -F "city=Karachi" \
-   -F "eventDate=2026-08-01T19:00:00.000Z" \
-   -F "bannerImage=@/path/to/banner.jpg"
+  -H "Authorization: Bearer <jwt-token>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "My Concert",
+    "description": "An evening of music",
+    "category": "concert",
+    "venue": "Hall 1",
+    "city": "Karachi",
+    "eventDate": "2026-08-01T19:00:00.000Z",
+    "bannerImage": "https://example.com/banner.jpg"
+  }'
 ```
 
-Sample successful response:
-
-```json
-{
-  "success": true,
-  "event": {
-    /* created event object */
-  },
-  "token": "<jwt-token>" /* token returned by createEvent */
-}
-```
-
-- Update event (protected)
+Note: `bannerImage` is a URL string, not a file upload, in the current
+implementation. File upload support (multer/Cloudinary) may be added in
+a later phase.
 
 ```bash
-curl -X PUT http://localhost:5000/api/events/<eventId> \
-   -H "Authorization: Bearer <jwt-token>" \
-   -F "title=Updated Title" \
-   -F "bannerImage=@/path/to/new-banner.jpg"
+curl -X PATCH http://localhost:5000/api/events/<eventId> \
+  -H "Authorization: Bearer <jwt-token>" \
+  -H "Content-Type: application/json" \
+  -d '{"title": "Updated Title", ...same shape as create...}'
 ```
-
-- Delete event (protected)
 
 ```bash
 curl -X DELETE http://localhost:5000/api/events/<eventId> \
-   -H "Authorization: Bearer <jwt-token>"
+  -H "Authorization: Bearer <jwt-token>"
 ```
 
-Notes
+---
 
-- Use the `Authorization: Bearer <token>` header for protected routes. You get the token from the login/signup responses.
-- For Postman, set the request body to `form-data` for file uploads and `raw JSON` for JSON bodies.
-- If you want, I can add Postman collection export examples to this repo.
+## Phase B4 — Ticket Listings (completed)
 
-## 7. What comes next
+- `GET /api/listings` — public, list all listings. Supports
+  `?eventId=` filter.
+- `GET /api/listings/:id` — public, single listing detail.
+- `POST /api/listings` — protected, restricted to `seller` or `admin`
+  roles via the `authorize` middleware. Validates the referenced event
+  actually exists before creating an orphan listing.
+- `PUT /api/listings/:id` — protected, only the listing's seller (or
+  admin). Only allowed while `status === "listed"` — can't edit a
+  listing that's already reserved/sold, since a buyer may already be
+  mid-transaction.
+- `DELETE /api/listings/:id` — protected, only the listing's seller (or
+  admin).
 
-## 7. What comes next
+Concepts: role-based route protection (`authorize("seller", "admin")`),
+cross-model existence validation, status-gated operations (an early
+taste of the state-machine thinking that Orders formalize fully).
 
-The current backend is the foundation. The next step is to add more real marketplace features such as:
+---
 
-- creating ticket listings
-- buying and selling tickets
-- seller and buyer dashboards
-- payment integration
-- admin controls
+## Phase B5 — Orders (completed)
 
-## 8. Simple summary
+- `POST /api/orders` — protected, buyer creates an order for a listing.
+  - Rejects if the listing isn't `status: "listed"`.
+  - Rejects if the buyer is the listing's own seller.
+  - Snapshots `amount` / `platformFee` at the moment of purchase (so
+    the order's recorded price never changes even if the listing's
+    price is edited later).
+  - Side-effect: flips the listing's status to `"reserved"` so it
+    can't be sold twice.
+- `GET /api/orders/mine` — protected, all orders where the logged-in
+  user is either the buyer or the seller.
+- `GET /api/orders/:id` — protected, only the buyer, seller, or an
+  admin on that specific order can view it.
+- `PATCH /api/orders/:id/status` — protected, moves an order through
+  its state machine. Only the seller can trigger `transferred`; only
+  the buyer can trigger `completed`.
 
-In short, the backend currently:
+### Order state machine
 
-- starts the server
-- connects to MongoDB
-- handles signup and login
-- creates JWT tokens
-- protects routes
-- handles errors properly
+pending → paid → transferred → completed
+↓        ↓          ↓
+cancelled refunded   disputed → completed / refunded
+- `completed`, `cancelled`, and `refunded` are terminal — no further
+  transitions are allowed once reached.
+- All transitions are validated by `order.transitionTo(nextStatus)`, an
+  instance method on the `Order` model, checked against a whitelist
+  table in `src/utils/orderStateMachine.js`. Controllers never set
+  `order.status` directly — every status change goes through this
+  method, so the rule can't be bypassed by a future route that forgets
+  to check.
+- The model method is intentionally framework-agnostic: it throws a
+  plain `Error` and knows nothing about `res.status()`. Translating
+  that into an HTTP status code is the controller's job.
+- **Separation of concerns:** "is this transition valid at all" lives
+  in the model (state machine); "is *this specific user* allowed to
+  trigger *this specific* transition" lives in the controller (e.g.
+  only a seller can mark `transferred`, only a buyer can mark
+  `completed`) — these are different questions answered in different
+  layers.
 
-That is the complete backend flow for the project so far.
+### Order examples
+
+```bash
+curl -X POST http://localhost:5000/api/orders \
+  -H "Authorization: Bearer <buyer-jwt-token>" \
+  -H "Content-Type: application/json" \
+  -d '{"ticketListingId": "<listingId>"}'
+```
+
+```bash
+curl http://localhost:5000/api/orders/mine \
+  -H "Authorization: Bearer <jwt-token>"
+```
+
+```bash
+curl -X PATCH http://localhost:5000/api/orders/<orderId>/status \
+  -H "Authorization: Bearer <seller-jwt-token>" \
+  -H "Content-Type: application/json" \
+  -d '{"status": "transferred"}'
+```
+
+### Known limitation (intentional — addressed in Phase B8)
+
+The "is this listing still available" check in `createOrder` is not
+yet race-condition-safe: two simultaneous requests could both pass the
+availability check before either one writes. This will be fixed with
+an atomic `findOneAndUpdate` (or a proper MongoDB transaction/session)
+when concurrency control is covered.
+
+---
+
+## What comes next
+
+- **Phase B6** — Stripe integration (test mode): wire real payment
+  intents into the `pending → paid` transition, and a webhook to
+  confirm payment asynchronously.
+- **Phase B7** — Escrow release + TicketTransfer model + QR code
+  generation/validation.
+- **Phase B8** — Concurrency control: atomic operations / transactions
+  to close the race-condition gap noted above.
+- **Phase B9** — Connect the Next.js frontend to this real backend,
+  replacing `lib/mockData.ts`.
+
+## Testing
+
+All endpoints have been manually tested via Postman/Thunder Client,
+covering both the happy path and negative cases (missing auth, wrong
+role, wrong owner, invalid state transitions, non-existent resources).
+Compass (MongoDB GUI) was used alongside testing to visually confirm
+documents, relations, and status changes in the database.
