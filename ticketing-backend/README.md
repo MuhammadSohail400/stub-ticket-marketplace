@@ -229,3 +229,52 @@ covering both the happy path and negative cases (missing auth, wrong
 role, wrong owner, invalid state transitions, non-existent resources).
 Compass (MongoDB GUI) was used alongside testing to visually confirm
 documents, relations, and status changes in the database.
+Koi masla nahi — bas ek aur chhota commit kar denge README ke liye, alag commit hona bhi normal hai (history mein clean rehta hai "docs update" alag se dikhna).
+
+README mein add karo (ticketing-backend/README.md ke end mein, "Next: Phase B6" wale section ko replace karke)
+markdown
+
+## Phase B6 — Stripe Payment Integration (completed)
+
+- `POST /api/orders` now also creates a Stripe Payment Intent for the
+  order's total (`amount + platformFee`), stores its ID on the order
+  (`stripePaymentIntentId`), and returns a `clientSecret` in the
+  response for the frontend to use with Stripe.js/Elements.
+- `POST /api/orders/webhook` — receives Stripe's server-to-server
+  confirmation that a payment succeeded, verifies the request's
+  signature, and moves the matching order from `pending` to `paid` via
+  `order.transitionTo()`.
+
+Concepts:
+- **Payment Intents** — a two-step payment flow (create intent on the
+  server, confirm with card details on the client) instead of trusting
+  a client-reported "payment successful."
+- **Webhooks (inversion of control)** — instead of polling Stripe for
+  status, Stripe calls our server when something happens. This is why
+  the webhook route has no `protect` middleware — it's authenticated by
+  Stripe's signature, not a user JWT.
+- **Raw body vs. parsed JSON** — the webhook route is mounted in
+  `app.js` with `express.raw()`, registered *before* the global
+  `express.json()` middleware. Signature verification needs the exact
+  original request bytes; once `express.json()` parses a body into a
+  JS object, the raw bytes needed for the signature check are gone.
+- **Idempotency** — Stripe may send the same webhook event more than
+  once (retries). The handler only calls `transitionTo("paid")` if the
+  order is still `pending`, so a duplicate webhook is a harmless no-op
+  instead of an error.
+- Amounts are converted to the smallest currency unit (paisa, not
+  rupees) before being sent to Stripe.
+
+### Testing note
+
+Full webhook testing requires the Stripe CLI (`stripe listen --forward-to
+...`) to forward events to localhost, which wasn't set up in this phase.
+Instead, the `pending -> paid` transition was verified manually via
+`PATCH /api/orders/:id/status`. This is fine for local development, but
+in production the ONLY trusted way to mark an order "paid" is the
+verified webhook — a manually-triggered PATCH bypasses payment
+verification entirely and should never be relied on outside testing.
+
+## Next: Phase B7
+
+Escrow release + TicketTransfer model + QR code generation/validation.
