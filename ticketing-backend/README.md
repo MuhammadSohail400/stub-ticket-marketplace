@@ -275,6 +275,48 @@ in production the ONLY trusted way to mark an order "paid" is the
 verified webhook — a manually-triggered PATCH bypasses payment
 verification entirely and should never be relied on outside testing.
 
-## Next: Phase B7
+## Phase B7 — Escrow Release + TicketTransfer + QR Code (completed)
 
-Escrow release + TicketTransfer model + QR code generation/validation.
+- `POST /api/transfers/:orderId` — protected, only the order's seller
+  can initiate a transfer. Requires `order.status === "paid"`. Generates
+  a cryptographically random token (`crypto.randomBytes`), encodes it
+  as a QR code image (base64 data URL), and transitions the order
+  `paid -> transferred`.
+- `GET /api/transfers/:orderId` — protected, buyer, seller, or admin can
+  view the transfer (to display/download the QR).
+- `PATCH /api/transfers/:orderId/confirm` — protected, only the order's
+  buyer can confirm receipt. This transitions the order
+  `transferred -> completed` AND releases escrow
+  (`escrowStatus: "held" -> "released"`).
+- `POST /api/transfers/validate` — intentionally unprotected (simulates
+  a gate-scanner, not a logged-in buyer/seller action). Looks up a
+  transfer by its raw token and marks it `isUsed: true`. A token that's
+  already been used is rejected — this is what makes a screenshot of
+  the QR code useless after first scan.
+
+Concepts:
+- **QR code generation** — the QR image is just a visual encoding of a
+  unique secret token; the token itself (not the image) is what's
+  actually verified in the database.
+- **Cryptographically secure randomness** (`crypto.randomBytes`, not
+  `Math.random()`) — the token must be computationally infeasible to
+  guess.
+- **One-time-use tokens** (`isUsed` flag) — the same security pattern
+  used by password-reset links: valid once, then permanently dead.
+- **Escrow release as a specific trigger point** — money conceptually
+  moves from "held" to "released" at exactly one moment: buyer
+  confirmation, not seller claim. Neither party can single-handedly
+  complete the transaction — the seller proves they sent it (QR
+  generation), the buyer proves they received it (confirmation) —
+  a mutual-trust mechanism between two parties who don't know each
+  other.
+- **Role-specific state transitions**, now spanning two related models
+  (Order + TicketTransfer) instead of one.
+
+## Next: Phase B8
+
+Concurrency control — closing the race-condition gap noted in Phase B5
+(two simultaneous buyers passing the "is this listing available" check
+before either write completes), using atomic `findOneAndUpdate`
+operations or MongoDB transactions/sessions.
+

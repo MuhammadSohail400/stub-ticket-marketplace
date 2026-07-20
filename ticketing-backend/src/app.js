@@ -43,6 +43,7 @@ app.use("/api/auth", require("./routes/authRoute"));
 app.use("/api/events", require("./routes/eventRoutes"));
 app.use("/api/listings", require("./routes/listingRoutes"));
 app.use("/api/orders", require("./routes/orderRoutes"));
+app.use("/api/transfers", require("./routes/transferRoutes"));
 
 // Fallback handlers for 404 and centralized error formatting.
 app.use(notFound);
