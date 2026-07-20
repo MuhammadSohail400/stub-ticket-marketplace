@@ -4,9 +4,6 @@ const Order = require("../models/Order");
 const TicketListing = require("../models/TicketingListing");
 const { createPaymentIntent, constructWebhookEvent } = require("../services/stripeService");
 
-// Order controller for ticket marketplace workflows.
-// Responsibilities include order creation, authorization checks,
-// order retrieval, and status transitions.
 async function createOrder(req, res, next) {
   try {
     const { ticketListingId } = req.body;
@@ -16,56 +13,59 @@ async function createOrder(req, res, next) {
       throw new Error("ticketListingId is required");
     }
 
-    // Validate the requested listing and ensure it is still available.
-    const listing = await TicketListing.findById(ticketListingId);
-    if (!listing) {
+    const listingPreview = await TicketListing.findById(ticketListingId);
+
+    if (!listingPreview) {
       res.status(404);
       throw new Error("Ticket listing not found");
     }
 
-    if (listing.status !== "listed") {
-      res.status(400);
-      throw new Error("This ticket is no longer available");
-    }
-
-    // Prevent marketplace users from purchasing their own inventory.
-    if (listing.seller.toString() === req.user._id.toString()) {
+    if (listingPreview.seller.toString() === req.user._id.toString()) {
       res.status(400);
       throw new Error("You cannot buy your own listing");
     }
 
-    const amount = listing.price;
-    const platformFee = Math.round(amount * 0.05);
+    const reservedListing = await TicketListing.findOneAndUpdate(
+      { _id: ticketListingId, status: "listed" },
+      { status: "reserved" },
+      { new: true } // return the document AFTER the update, not before
+    );
 
-    const order = await Order.create({
-      ticketListing: listing._id,
-      buyer: req.user._id,
-      seller: listing.seller,
-      amount,
-      platformFee,
-    });
-     // Concept: we create the Stripe Payment Intent with the FULL amount
-    // the buyer pays (ticket price + platform fee) — the fee isn't a
-    // separate charge, it's baked into the one payment.
-    const totalChargeAmount = amount + platformFee;
-    const paymentIntent = await createPaymentIntent(totalChargeAmount);
+    if (!reservedListing) {
 
-    order.stripePaymentIntentId = paymentIntent.id;
-    await order.save();
-    // Reserve the listing to prevent concurrent purchases.
-    listing.status = "reserved";
-    await listing.save();
+      res.status(400);
+      throw new Error("This ticket is no longer available");
+    }
 
-    res.status(201).json({
-      success: true,
-      order,
-       // Concept: clientSecret is what the FRONTEND needs to actually
-      // collect card details via Stripe.js/Stripe Elements. It's safe to
-      // send to the browser — it can only be used to complete THIS one
-      // payment intent, nothing else (unlike the secret key, which must
-      // never leave the server).
-      clientSecret: paymentIntent.client_secret,
-    });
+    const amount = reservedListing.price;
+    const platformFee = Math.round(amount * 0.05); // 5%, matches the frontend checkout page
+
+    let order;
+    try {
+      order = await Order.create({
+        ticketListing: reservedListing._id,
+        buyer: req.user._id,
+        seller: reservedListing.seller,
+        amount,
+        platformFee,
+      });
+
+      const totalChargeAmount = amount + platformFee;
+      const paymentIntent = await createPaymentIntent(totalChargeAmount);
+
+      order.stripePaymentIntentId = paymentIntent.id;
+      await order.save();
+
+      res.status(201).json({
+        success: true,
+        order,
+        clientSecret: paymentIntent.client_secret,
+      });
+    } catch (innerError) {
+
+      await TicketListing.findByIdAndUpdate(reservedListing._id, { status: "listed" });
+      throw innerError;
+    }
   } catch (error) {
     next(error);
   }

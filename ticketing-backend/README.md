@@ -313,10 +313,37 @@ Concepts:
 - **Role-specific state transitions**, now spanning two related models
   (Order + TicketTransfer) instead of one.
 
-## Next: Phase B8
+## Phase B8 — Concurrency Control (completed)
 
-Concurrency control — closing the race-condition gap noted in Phase B5
-(two simultaneous buyers passing the "is this listing available" check
-before either write completes), using atomic `findOneAndUpdate`
-operations or MongoDB transactions/sessions.
+- Fixed the race condition flagged back in Phase B5: `createOrder` used
+  to read a listing's status, check it in JavaScript, then write a
+  separate update — three steps with a gap where two simultaneous
+  buyers could both pass the availability check before either write
+  landed (a double-sell bug).
+- Replaced this with a single atomic `TicketListing.findOneAndUpdate({
+  _id, status: "listed" }, { status: "reserved" })` — MongoDB guarantees
+  this check-and-write happens as one indivisible operation per
+  document, so only the first of two concurrent requests can ever
+  succeed.
+- Added a **compensating action**: if anything fails after the listing
+  is atomically reserved (Order validation, Stripe being down), the
+  listing is manually reverted to `"listed"` in a catch block — without
+  this, a failed order would leave a ticket permanently stuck as
+  unavailable with no order attached to it.
+- `scripts/testConcurrency.js` — a standalone script that fires two
+  simultaneous order requests via `Promise.all()` and asserts exactly
+  one succeeds, proving the fix under real concurrent load (something
+  Postman can't easily simulate manually).
 
+Concepts: atomic database operations vs. multi-step
+check-then-write races, MongoDB's per-document atomicity guarantee,
+compensating actions (manual rollback) as a lighter-weight alternative
+to full multi-document transactions when only one collection needs to
+stay consistent.
+
+## Next: Phase B9
+
+Connect the Next.js frontend to this real backend — replacing
+`lib/mockData.ts` with real API calls (axios), wiring up NextAuth for
+real login/signup, and Stripe Elements on the checkout page for actual
+card payment collection.
