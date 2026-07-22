@@ -1,23 +1,31 @@
 const generateToken = require('../utils/generateToken');
 const Listing = require('../models/TicketingListing');
 const Event = require('../models/Event');
+const { uploadImage,deleteImage } = require("../services/cloudinaryService");
 
 const createListing = async (req, res, next) => {
   try{
-    const { event, section, seatInfo, price, faceValue, quantity, proofImage } = req.body;
+    const { event, section, seatInfo, price, faceValue, quantity } = req.body;
     const eventExists = await Event.findById(event);
     if(!eventExists){
       res.status(404);
       return next(new Error("Event not found"));
     }
-
+     if(!req.file){
+    res.status(400);
+    return next(new Error("Banner image is required"));
+  }
+  const uploadedImage = await uploadImage(req.file.buffer);
     const listing = await Listing.create({
       event,
       seller: req.user._id,
       section,
       seatInfo,
       price,
-      faceValue,
+      proofImage: {
+    url: uploadedImage.secure_url,
+    public_id: uploadedImage.public_id,
+  },
       quantity,
       proofImage
     });
@@ -67,37 +75,65 @@ const getListingById = async (req, res, next) => {
 const updateListing = async (req, res, next) => {
   try {
     const listing = await Listing.findById(req.params.id);
+
     if (!listing) {
       res.status(404);
       return next(new Error("Listing not found"));
     }
 
-    if (listing.seller.toString() !== req.user._id.toString() && req.user.role !== "admin") {
+    if (
+      listing.seller.toString() !== req.user._id.toString() &&
+      req.user.role !== "admin"
+    ) {
       res.status(403);
-      return next(new Error("You are not authorized to update this listing"));
+      return next(
+        new Error("You are not authorized to update this listing")
+      );
     }
 
     if (listing.status !== "listed") {
       res.status(400);
-      return next(new Error("Cannot edit a listing that's already reserved or sold"));
+      return next(
+        new Error("Cannot edit a listing that's already reserved or sold")
+      );
     }
 
-    const { section, seatInfo, price, faceValue, quantity, proofImage } = req.body;
-    if (!section || !seatInfo || !price || !faceValue || !quantity || !proofImage) {
+    const { section, seatInfo, price, faceValue, quantity } = req.body;
+
+    if (!section || !seatInfo || !price || !faceValue || !quantity) {
       res.status(400);
       return next(new Error("All fields are required"));
     }
 
-    const updatedListing = await Listing.findByIdAndUpdate(
-      req.params.id,
-      { section, seatInfo, price, faceValue, quantity, proofImage },
-      { new: true }
-    );
+    let proofImage = listing.proofImage;
+
+    if (req.file) {
+      await deleteImage(listing.proofImage.public_id);
+
+      const uploadedImage = await uploadImage(
+        req.file.buffer,
+        "ticket-proofs"
+      );
+
+      proofImage = {
+        url: uploadedImage.secure_url,
+        public_id: uploadedImage.public_id,
+      };
+    }
+
+    listing.section = section;
+    listing.seatInfo = seatInfo;
+    listing.price = price;
+    listing.faceValue = faceValue;
+    listing.quantity = quantity;
+    listing.proofImage = proofImage;
+
+    await listing.save();
 
     res.status(200).json({
       success: true,
-      listing: updatedListing,
-      token: generateToken(req.user._id)
+      listing,
+      token: generateToken(req.user._id),
     });
   } catch (error) {
     next(error);
@@ -105,26 +141,40 @@ const updateListing = async (req, res, next) => {
 };
 
 const deleteListing = async (req, res, next) => {
-  try{
+  try {
     const listing = await Listing.findById(req.params.id);
-    if(!listing){
+
+    if (!listing) {
       res.status(404);
       return next(new Error("Listing not found"));
     }
-    if(listing.seller.toString() !== req.user._id.toString()){
+
+    if (
+      listing.seller.toString() !== req.user._id.toString() &&
+      req.user.role !== "admin"
+    ) {
       res.status(403);
-      return next(new Error("You are not authorized to delete this listing"));
+      return next(
+        new Error("You are not authorized to delete this listing")
+      );
     }
-    await Listing.findByIdAndDelete(req.params.id);
+
+    // Delete image from Cloudinary
+    await deleteImage(listing.proofImage.public_id);
+
+    // Delete listing from MongoDB
+    await listing.deleteOne();
+
     res.status(200).json({
       success: true,
       message: "Listing deleted successfully",
-      token: generateToken(req.user._id)
+      token: generateToken(req.user._id),
     });
-  }catch(error){
-    next(error)
+  } catch (error) {
+    next(error);
   }
-}
+};
+
 
 module.exports = {
   createListing,

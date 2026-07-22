@@ -24,8 +24,16 @@ const ticketTransferSchema = new mongoose.Schema(
     // frontend can render it directly in an <img src="..."> tag with no
     // extra file storage/hosting needed for this learning phase.
     qrCodeImage: {
-      type: String,
-      required: true,
+        url:{
+          type:String,
+          required:true
+        },
+        public_id:{
+          type:String,
+          required:true
+
+        }
+,
     },
 
     transferredAt: {

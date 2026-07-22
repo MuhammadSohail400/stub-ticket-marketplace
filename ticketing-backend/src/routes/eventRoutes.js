@@ -4,10 +4,9 @@ const router = express.Router();
 
 const { createEvent, getAllEvents,getEventById,updateEvent,deleteEvent } = require("../controllers/eventController");
 const { protect } = require("../middleware/auth");
+const upload = require("../middleware/upload");
 
-const multer = require("multer");
-const storage = multer.memoryStorage();
-const upload = multer({ storage: storage });
+
 
 router.post("/", protect, upload.single("bannerImage"), createEvent);
 router.get("/", getAllEvents);

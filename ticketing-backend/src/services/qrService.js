@@ -16,8 +16,8 @@ function generateUniqueToken() {
 // a string that a browser can render directly as an image, e.g.:
 // <img src={qrCodeImage} />
 async function generateQRCodeImage(data) {
-  const dataUrl = await QRCode.toDataURL(data);
-  return dataUrl;
+  const buffer = await QRCode.toBuffer(data);
+  return buffer;
 }
 
 module.exports = { generateUniqueToken, generateQRCodeImage };

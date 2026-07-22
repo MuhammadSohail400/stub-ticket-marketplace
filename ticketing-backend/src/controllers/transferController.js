@@ -1,6 +1,7 @@
 const TicketTransfer = require("../models/TicketTransfer");
 const Order = require("../models/Order");
 const { generateUniqueToken, generateQRCodeImage } = require("../services/qrService");
+const { uploadImage,deleteImage } = require("../services/cloudinaryService");
 
 // POST /api/transfers/:orderId
 // Concept: only the SELLER of this specific order can initiate a
@@ -37,12 +38,22 @@ async function initiateTransfer(req, res, next) {
     }
 
     const token = generateUniqueToken();
-    const qrCodeImage = await generateQRCodeImage(token);
+    const qrBuffer = await generateQRCodeImage(token);
+
+    const uploadedQR = await uploadImage(
+       qrBuffer,
+      "ticket-qrcodes"
+);
+
+
 
     const transfer = await TicketTransfer.create({
       order: order._id,
       token,
-      qrCodeImage,
+       qrCodeImage: {
+    url: uploadedQR.secure_url,
+    public_id: uploadedQR.public_id,
+  },
     });
 
     // Concept: this delegates to the state machine — order.transitionTo()

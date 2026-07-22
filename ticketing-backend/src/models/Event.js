@@ -33,9 +33,14 @@ const eventSchema = new mongoose.Schema(
     required: [true, "Event date is required"],
   },
   bannerImage: {
-    type: String,
-    required: [true, "Banner image is required"],
-    trim: true,
+    url: {
+      type: String,
+      required: true,
+    },
+    public_id: {
+      type: String,
+      required: true,
+    },
   },
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,

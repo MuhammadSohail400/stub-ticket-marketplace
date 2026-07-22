@@ -36,9 +36,14 @@ const ticketingListingSchema = new mongoose.Schema(
       min: [1, 'Quantity must be at least 1'],
     },
     proofImage: {
-      type: String,
-      required: [true, 'Proof image is required'],
-      trim: true,
+      url: {
+        type: String,
+        required: true,
+      },
+      public_id: {
+        type: String,
+        required: true,
+      },
     },
     status: {
       type: String,
