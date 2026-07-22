@@ -15,17 +15,17 @@ export interface EventItem {
   category: EventCategory;
   venue: string;
   city: string;
-  eventDate: string; // ISO
-  bannerColor: string; // fallback token for banner art
-  lowestPrice: number;
-  listingCount: number;
+  eventDate: string;
+  bannerColor: string;
+  lowestPrice?: number;
+  listingCount?: number;
 }
 
 export interface Seller {
   id: string;
   name: string;
   verified: boolean;
-  trustScore: number; // 0-5
+  trustScore: number;
   salesCompleted: number;
 }
 

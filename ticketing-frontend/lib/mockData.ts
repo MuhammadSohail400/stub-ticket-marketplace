@@ -1,77 +1,4 @@
-import { EventItem, TicketListing } from "@/types";
-
-// NOTE: This file simulates what /api/events and /api/listings will return
-// once the Express + MongoDB backend is built in Phase 2. Swap the getters
-// below for real axios calls without changing any component code.
-
-export const events: EventItem[] = [
-  {
-    id: "evt-atif-karachi",
-    title: "Atif Aslam — Live in Concert",
-    category: "concert",
-    venue: "Expo Centre",
-    city: "Karachi",
-    eventDate: "2026-09-12T19:00:00+05:00",
-    bannerColor: "#14213D",
-    lowestPrice: 4500,
-    listingCount: 14,
-  },
-  {
-    id: "evt-psl-final",
-    title: "PSL Final 2026",
-    category: "sports",
-    venue: "National Stadium",
-    city: "Karachi",
-    eventDate: "2026-06-21T18:00:00+05:00",
-    bannerColor: "#2F6B4F",
-    lowestPrice: 3000,
-    listingCount: 27,
-  },
-  {
-    id: "evt-tech-summit",
-    title: "Karachi Tech Summit",
-    category: "conference",
-    venue: "Pearl Continental",
-    city: "Karachi",
-    eventDate: "2026-08-03T09:00:00+05:00",
-    bannerColor: "#E8A33D",
-    lowestPrice: 2000,
-    listingCount: 6,
-  },
-  {
-    id: "evt-coke-fest",
-    title: "Coke Studio Fest",
-    category: "festival",
-    venue: "Beach Luxury Grounds",
-    city: "Karachi",
-    eventDate: "2026-10-05T17:00:00+05:00",
-    bannerColor: "#C1443C",
-    lowestPrice: 3500,
-    listingCount: 19,
-  },
-  {
-    id: "evt-ali-sethi",
-    title: "Ali Sethi — Acoustic Night",
-    category: "concert",
-    venue: "Arts Council",
-    city: "Lahore",
-    eventDate: "2026-09-28T20:00:00+05:00",
-    bannerColor: "#14213D",
-    lowestPrice: 2800,
-    listingCount: 9,
-  },
-  {
-    id: "evt-startup-conf",
-    title: "Startup Founders Conference",
-    category: "conference",
-    venue: "Alhamra Arts Centre",
-    city: "Lahore",
-    eventDate: "2026-07-30T10:00:00+05:00",
-    bannerColor: "#E8A33D",
-    lowestPrice: 1500,
-    listingCount: 4,
-  },
-];
+import { TicketListing } from "@/types";
 
 export const listings: TicketListing[] = [
   {
@@ -141,10 +68,6 @@ export const listings: TicketListing[] = [
     status: "listed",
   },
 ];
-
-export function getEventById(id: string): EventItem | undefined {
-  return events.find((e) => e.id === id);
-}
 
 export function getListingsForEvent(eventId: string): TicketListing[] {
   return listings.filter((l) => l.eventId === eventId);

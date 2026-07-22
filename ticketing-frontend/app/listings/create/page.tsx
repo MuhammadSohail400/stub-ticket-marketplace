@@ -1,10 +1,36 @@
 "use client";
 
-import { useState } from "react";
-import { events } from "@/lib/mockData";
+import { useState, useEffect } from "react";
+import api from "@/lib/api";
+import { EventItem } from "@/types";
 
 export default function CreateListingPage() {
   const [submitted, setSubmitted] = useState(false);
+  const [events, setEvents] = useState<EventItem[]>([]);
+  const [loadingEvents, setLoadingEvents] = useState(true);
+
+  useEffect(() => {
+    async function loadEvents() {
+      try {
+        const { data } = await api.get("/events");
+        const mapped: EventItem[] = data.events.map((e: any) => ({
+          id: e._id,
+          title: e.title,
+          category: e.category,
+          venue: e.venue,
+          city: e.city,
+          eventDate: e.eventDate,
+          bannerColor: "#14213D",
+        }));
+        setEvents(mapped);
+      } catch (error) {
+        console.error("Failed to load events", error);
+      } finally {
+        setLoadingEvents(false);
+      }
+    }
+    loadEvents();
+  }, []);
 
   if (submitted) {
     return (
@@ -36,8 +62,10 @@ export default function CreateListingPage() {
         }}
       >
         <Field label="Event">
-          <select required className="input">
-            <option value="">Select an event</option>
+          <select required className="input" disabled={loadingEvents}>
+            <option value="">
+              {loadingEvents ? "Loading events..." : "Select an event"}
+            </option>
             {events.map((e) => (
               <option key={e.id} value={e.id}>
                 {e.title} — {e.city}
@@ -72,7 +100,7 @@ export default function CreateListingPage() {
           <div className="border border-dashed border-line rounded-md px-4 py-8 text-center text-sm text-muted">
             Upload a screenshot or PDF of your original ticket
             <br />
-            <span className="text-xs">(wired up once file storage is added in Phase 2)</span>
+            <span className="text-xs">(wired up in Phase F4)</span>
           </div>
         </Field>
 

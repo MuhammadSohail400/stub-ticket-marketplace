@@ -1,6 +1,9 @@
 import { notFound } from "next/navigation";
-import { getListingById, getEventById, formatPKR, formatEventDate } from "@/lib/mockData";
+import { getListingById, formatPKR, formatEventDate } from "@/lib/mockData";
+import { getEventById } from "@/lib/events";
 import TicketStub from "@/components/TicketStub";
+
+export const dynamic = "force-dynamic";
 
 export default async function CheckoutPage({
   params,
@@ -10,7 +13,7 @@ export default async function CheckoutPage({
   const { listingId } = await params;
   const listing = getListingById(listingId);
   if (!listing) notFound();
-  const event = getEventById(listing.eventId);
+  const event = await getEventById(listing.eventId);
   if (!event) notFound();
 
   const platformFee = Math.round(listing.price * 0.05);
@@ -48,7 +51,7 @@ export default async function CheckoutPage({
         <button
           className="mt-6 w-full font-semibold bg-ink text-paper rounded-md px-6 py-3 hover:bg-stamp hover:text-ink transition-colors"
           disabled
-          title="Stripe integration comes in Phase 3"
+          title="Stripe integration comes in Phase F5"
         >
           Pay {formatPKR(total)} with Stripe
         </button>

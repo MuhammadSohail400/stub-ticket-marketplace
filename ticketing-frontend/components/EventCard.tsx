@@ -23,9 +23,11 @@ export default function EventCard({ event }: { event: EventItem }) {
         <span className="text-[11px] font-stub uppercase tracking-widest text-paper/80 bg-black/20 rounded-full px-2 py-1">
           {CATEGORY_LABEL[event.category]}
         </span>
-        <span className="absolute top-3 right-3 text-[11px] font-stub text-paper/70">
-          {event.listingCount} listed
-        </span>
+        {event.listingCount !== undefined && (
+          <span className="absolute top-3 right-3 text-[11px] font-stub text-paper/70">
+            {event.listingCount} listed
+          </span>
+        )}
       </div>
       <div className="p-4">
         <h3 className="font-display font-semibold text-lg leading-snug group-hover:text-stamp transition-colors">
@@ -38,9 +40,11 @@ export default function EventCard({ event }: { event: EventItem }) {
           <span className="text-xs font-stub uppercase tracking-wide text-muted">
             {formatEventDate(event.eventDate)}
           </span>
-          <span className="text-sm font-semibold">
-            from <span className="text-verified">{formatPKR(event.lowestPrice)}</span>
-          </span>
+          {event.lowestPrice !== undefined && (
+            <span className="text-sm font-semibold">
+              from <span className="text-verified">{formatPKR(event.lowestPrice)}</span>
+            </span>
+          )}
         </div>
       </div>
     </Link>

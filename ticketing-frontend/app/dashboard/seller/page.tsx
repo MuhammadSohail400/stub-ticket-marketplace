@@ -1,9 +1,13 @@
 import Link from "next/link";
-import { listings, events, formatPKR } from "@/lib/mockData";
+import { listings, formatPKR } from "@/lib/mockData";
+import { getEvents } from "@/lib/events";
 import StatusBadge from "@/components/StatusBadge";
 
-export default function SellerDashboard() {
+export const dynamic = "force-dynamic";
+
+export default async function SellerDashboard() {
   const myListings = listings.slice(2, 6);
+  const events = await getEvents();
 
   return (
     <div className="mx-auto max-w-4xl px-5 py-12">
@@ -31,7 +35,7 @@ export default function SellerDashboard() {
               className="flex items-center justify-between border border-line rounded-lg bg-white p-4"
             >
               <div>
-                <p className="font-display font-semibold">{event?.title}</p>
+                <p className="font-display font-semibold">{event?.title ?? l.eventId}</p>
                 <p className="text-sm text-muted">
                   {l.section} · {l.seatInfo} · Qty {l.quantity}
                 </p>

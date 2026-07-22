@@ -1,7 +1,10 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getEventById, getListingsForEvent, formatEventDate, formatPKR } from "@/lib/mockData";
+import { getEventById } from "@/lib/events";
+import { getListingsForEvent, formatEventDate, formatPKR } from "@/lib/mockData";
 import TicketStub from "@/components/TicketStub";
+
+export const dynamic = "force-dynamic";
 
 export default async function EventDetailPage({
   params,
@@ -9,7 +12,7 @@ export default async function EventDetailPage({
   params: Promise<{ eventId: string }>;
 }) {
   const { eventId } = await params;
-  const event = getEventById(eventId);
+  const event = await getEventById(eventId);
   if (!event) notFound();
 
   const eventListings = getListingsForEvent(eventId);
@@ -27,8 +30,13 @@ export default async function EventDetailPage({
             <span>{event.venue}, {event.city}</span>
             <span>{formatEventDate(event.eventDate)}</span>
             <span>
-              {eventListings.length} listing{eventListings.length !== 1 && "s"} · from{" "}
-              <span className="text-verified font-semibold">{formatPKR(event.lowestPrice)}</span>
+              {eventListings.length} listing{eventListings.length !== 1 && "s"}
+              {event.lowestPrice !== undefined && (
+                <>
+                  {" "}· from{" "}
+                  <span className="text-verified font-semibold">{formatPKR(event.lowestPrice)}</span>
+                </>
+              )}
             </span>
           </div>
         </div>

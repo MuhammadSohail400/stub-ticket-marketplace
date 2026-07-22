@@ -1,7 +1,11 @@
 import EventCard from "@/components/EventCard";
-import { events } from "@/lib/mockData";
+import { getEvents } from "@/lib/events";
 
-export default function EventsPage() {
+export const dynamic = "force-dynamic";
+
+export default async function EventsPage() {
+  const events = await getEvents();
+
   return (
     <div className="mx-auto max-w-6xl px-5 py-12">
       <div className="mb-8">
@@ -31,6 +35,12 @@ export default function EventsPage() {
           <EventCard key={e.id} event={e} />
         ))}
       </div>
+
+      {events.length === 0 && (
+        <p className="text-muted text-sm">
+          No events yet — create one from the backend to see it here.
+        </p>
+      )}
     </div>
   );
 }
