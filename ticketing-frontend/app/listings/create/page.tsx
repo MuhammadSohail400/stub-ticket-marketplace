@@ -3,12 +3,20 @@
 import { useState, useEffect } from "react";
 import api from "@/lib/api";
 import { EventItem } from "@/types";
+import RequireAuth from "@/components/RequireAuth";
 
 export default function CreateListingPage() {
+  return (
+    <RequireAuth requireRole="seller">
+      <CreateListingForm />
+    </RequireAuth>
+  );
+}
+
+function CreateListingForm() {
   const [submitted, setSubmitted] = useState(false);
   const [events, setEvents] = useState<EventItem[]>([]);
   const [loadingEvents, setLoadingEvents] = useState(true);
-
   useEffect(() => {
     async function loadEvents() {
       try {
