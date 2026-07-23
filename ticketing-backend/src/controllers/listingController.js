@@ -22,12 +22,12 @@ const createListing = async (req, res, next) => {
       section,
       seatInfo,
       price,
+      faceValue,
       proofImage: {
     url: uploadedImage.secure_url,
     public_id: uploadedImage.public_id,
   },
       quantity,
-      proofImage
     });
 
     const token = generateToken(req.user._id);
