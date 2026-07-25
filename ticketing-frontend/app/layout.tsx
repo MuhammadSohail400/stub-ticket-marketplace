@@ -39,6 +39,10 @@ export default function RootLayout({
       className={`${spaceGrotesk.variable} ${ibmPlex.variable} ${ibmPlexMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-paper text-ink">
+        {/* Concept: RootLayout is a Server Component, but it CAN render a
+            Client Component (AuthProvider) and pass server-rendered
+            content (Navbar, children, Footer) into it as `children` —
+            this is a standard, valid Next.js App Router pattern. */}
         <AuthProvider>
           <Navbar />
           <main className="flex-1">{children}</main>

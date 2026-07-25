@@ -6,7 +6,7 @@ import { useAuth } from "@/lib/AuthContext";
 
 export default function SignupPage() {
   const router = useRouter();
-    const { signup } = useAuth();
+  const { signup } = useAuth();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -18,6 +18,7 @@ export default function SignupPage() {
     e.preventDefault();
     setError("");
     setLoading(true);
+
     try {
       await signup(name, email, password, role);
       router.push("/");

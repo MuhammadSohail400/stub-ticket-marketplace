@@ -47,6 +47,10 @@ export default function Navbar() {
         </nav>
 
         <div className="flex items-center gap-3">
+          {/* Concept: while `loading` is true, we render nothing here —
+              this avoids a "flash" of Log in/Sign up buttons for a split
+              second before we've checked localStorage, which would look
+              broken for an already-logged-in user refreshing the page. */}
           {loading ? null : user ? (
             <>
               <span className="text-sm font-medium hidden sm:inline">Hi, {user.name}</span>

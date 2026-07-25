@@ -26,6 +26,10 @@ const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
+  // Concept: "loading" exists because on first render, we haven't
+  // checked localStorage yet — without this flag, a protected page
+  // would flash "please log in" for a split second even for an
+  // already-logged-in user, before the useEffect below finishes.
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -35,7 +39,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   async function login(email: string, password: string) {
     const loggedInUser = await loginApi(email, password);
-    setUser(loggedInUser);
+    setUser(loggedInUser); // Concept: THIS line is what makes Navbar update instantly
     return loggedInUser;
   }
 
@@ -62,6 +66,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 }
 
+// Concept: this hook is how any component reads/uses auth state —
+// `const { user, logout } = useAuth();` — without needing to know
+// anything about localStorage or the Context API directly.
 export function useAuth() {
   const context = useContext(AuthContext);
   if (!context) {

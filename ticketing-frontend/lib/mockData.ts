@@ -1,5 +1,10 @@
 import { TicketListing } from "@/types";
 
+// NOTE: Events are now fetched from the real backend — see lib/events.ts.
+// This file still simulates /api/listings until Phase F4 connects that
+// too. Swap the getters below for real axios calls without changing any
+// component code.
+
 export const listings: TicketListing[] = [
   {
     id: "lst-001",

@@ -10,6 +10,11 @@ export interface AuthUser {
 const TOKEN_KEY = "stub_token";
 const USER_KEY = "stub_user";
 
+// Concept: these guard against `typeof window === "undefined"` because
+// this file can be imported from Server Components too (indirectly, via
+// api.ts's interceptor) — and `localStorage` doesn't exist in Node.js.
+// Server-side code just gets `null` back instead of crashing.
+
 export function getToken(): string | null {
   if (typeof window === "undefined") return null;
   return localStorage.getItem(TOKEN_KEY);

@@ -1,9 +1,15 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getEventById } from "@/lib/events";
-import { getListingsForEvent, formatEventDate, formatPKR } from "@/lib/mockData";
+import { getListingsForEvent } from "@/lib/listings";
+import { formatEventDate, formatPKR } from "@/lib/mockData";
 import TicketStub from "@/components/TicketStub";
+import Image from "next/image";
 
+// Concept: these pages fetch live data from the backend on every
+// request instead of being statically generated at build time —
+// necessary since events/orders change constantly and build time
+// happens before the backend even has this data.
 export const dynamic = "force-dynamic";
 
 export default async function EventDetailPage({
@@ -15,11 +21,19 @@ export default async function EventDetailPage({
   const event = await getEventById(eventId);
   if (!event) notFound();
 
-  const eventListings = getListingsForEvent(eventId);
+  const eventListings = await getListingsForEvent(eventId);
 
   return (
     <div>
-      <div className="h-40 sm:h-56" style={{ backgroundColor: event.bannerColor }} />
+      <div className="relative h-40 sm:h-56">
+  <Image
+    src={event.bannerImage.url}
+    alt={event.title}
+    fill
+    className="object-cover"
+    priority
+  />
+</div>
       <div className="mx-auto max-w-6xl px-5">
         <div className="-mt-10 sm:-mt-14 bg-white border border-line rounded-xl p-6 shadow-sm">
           <p className="text-[11px] font-stub uppercase tracking-widest text-muted">

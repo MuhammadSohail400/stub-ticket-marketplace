@@ -1,11 +1,11 @@
 "use client";
+
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/AuthContext";
 
 export default function LoginPage() {
- 
-   const router = useRouter();
+  const router = useRouter();
   const { login } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -16,8 +16,14 @@ export default function LoginPage() {
     e.preventDefault();
     setError("");
     setLoading(true);
+
     try {
       await login(email, password);
+      // Concept: router.push navigates client-side (no full page
+      // reload) — router.refresh() additionally tells Next.js to
+      // re-fetch Server Component data on the destination page, which
+      // matters here because pages like the dashboards need to know
+      // "am I logged in now" on their very first render.
       router.push("/");
       router.refresh();
     } catch (err: any) {

@@ -1,6 +1,10 @@
 import EventCard from "@/components/EventCard";
 import { getEvents } from "@/lib/events";
 
+// Concept: these pages fetch live data from the backend on every
+// request instead of being statically generated at build time —
+// necessary since events/orders change constantly and build time
+// happens before the backend even has this data.
 export const dynamic = "force-dynamic";
 
 export default async function EventsPage() {
