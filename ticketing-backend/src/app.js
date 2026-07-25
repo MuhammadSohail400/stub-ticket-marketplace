@@ -1,13 +1,20 @@
 const express = require("express");
 const cors = require("cors");
 const morgan = require("morgan");
-const { errorHandler, notFound } = require("./middleware/errorHandler")
+const helmet = require("helmet");
+const mongoSanitize = require("express-mongo-sanitize");
+
+const { errorHandler, notFound } = require("./middleware/errorHandler");
+const { generalLimiter } = require("./middleware/rateLimiter");
 const { handleStripeWebhook } = require("./controllers/orderController");
 
 // Primary Express application for the ticketing backend.
 // Handles middleware registration, CORS configuration, request parsing,
 // logging, route wiring, and centralized error handling.
 const app = express();
+
+// Security headers — must be first to apply to every response.
+app.use(helmet());
 
 app.use(cors({ origin: process.env.CLIENT_URL, credentials: true }));
 
@@ -25,9 +32,18 @@ app.post(
   express.raw({ type: "application/json" }),
   handleStripeWebhook
 );
+
 app.use(express.json());
+
+// Strip any keys containing `$` or `.` from req.body, req.query, and
+// req.params to block NoSQL injection attempts.
+app.use(mongoSanitize());
+
 app.use(morgan("dev"));
 
+// General rate limiter: 100 requests per 15 minutes per IP across all routes.
+// Auth and validate endpoints apply stricter limiters at the route level.
+app.use(generalLimiter);
 
 app.get("/api/health", (req, res) => {
   res.json({

@@ -1,0 +1,4 @@
+# Git line-ending normalisation.
+# Forces all text files to be committed with LF endings regardless of
+# the editor/OS that last touched them, preventing CRLF/LF churn in diffs.
+* text=auto eol=lf

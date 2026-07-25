@@ -18,7 +18,7 @@ const userSchema = new mongoose.Schema(
     password: {
       type: String,
       required: [true, "Password is required"],
-      minlength: 6,
+      minlength: [8, "Password must be at least 8 characters"],
       select: false, // never return password by default on queries
     },
     role: {
@@ -26,10 +26,17 @@ const userSchema = new mongoose.Schema(
       enum: ["buyer", "seller", "admin"],
       default: "buyer",
     },
+
+    // Reserved for a future email-verification feature.
+    // Not currently read or written by any endpoint — intentionally a no-op
+    // until the verification flow (email link / OTP) is implemented.
     isVerified: {
       type: Boolean,
       default: false,
     },
+
+    // Reserved for a future seller reputation / trust-scoring feature.
+    // Not currently computed or surfaced anywhere — placeholder only.
     trustScore: {
       type: Number,
       default: 0,
@@ -52,4 +59,5 @@ userSchema.pre("save", async function () {
 userSchema.methods.comparePassword = async function (candidatePassword) {
   return bcrypt.compare(candidatePassword, this.password);
 };
+
 module.exports = mongoose.model("User", userSchema);

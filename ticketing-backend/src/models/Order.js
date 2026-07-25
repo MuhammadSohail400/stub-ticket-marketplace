@@ -33,7 +33,7 @@ const orderSchema = new mongoose.Schema(
 
     stripePaymentIntentId: {
       type: String,
-      default: null, // placeholder for future Stripe payment intent integration
+      default: null,
     },
 
     escrowStatus: {
@@ -50,6 +50,13 @@ const orderSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+
+// Compound index on the fields used by the getMyOrders $or query.
+// Without this, MongoDB performs a full collection scan for every call;
+// with it, both the buyer-side and seller-side halves of the $or can
+// use the index efficiently once data volume grows.
+orderSchema.index({ buyer: 1, createdAt: -1 });
+orderSchema.index({ seller: 1, createdAt: -1 });
 
 orderSchema.methods.transitionTo = async function (nextStatus) {
   // Validate lifecycle state transition using the order state machine.

@@ -1,5 +1,3 @@
-
-
 const mongoose = require("mongoose");
 
 const ticketTransferSchema = new mongoose.Schema(
@@ -20,20 +18,18 @@ const ticketTransferSchema = new mongoose.Schema(
       unique: true,
     },
 
-    // Concept: we store the QR as a data URL (base64-encoded PNG) so the
-    // frontend can render it directly in an <img src="..."> tag with no
-    // extra file storage/hosting needed for this learning phase.
+    // The QR code is stored as a Cloudinary-hosted image (url + public_id).
+    // The token above is encoded into the QR visually; when scanned, the
+    // decoded string (the token) is what gets sent to POST /transfers/validate.
     qrCodeImage: {
-        url:{
-          type:String,
-          required:true
-        },
-        public_id:{
-          type:String,
-          required:true
-
-        }
-,
+      url: {
+        type: String,
+        required: true,
+      },
+      public_id: {
+        type: String,
+        required: true,
+      },
     },
 
     transferredAt: {
