@@ -8,12 +8,13 @@ const fileFilter = (req, file, cb) => {
     "image/png",
     "image/jpg",
     "image/webp",
+    "image/jfif"
   ];
 
   if (allowedTypes.includes(file.mimetype)) {
     cb(null, true);
   } else {
-    cb(new Error("Only JPG, JPEG, PNG and WEBP images are allowed"), false);
+    cb(new Error("Only JPG, JPEG,Jfif, PNG and WEBP images are allowed"), false);
   }
 };
 

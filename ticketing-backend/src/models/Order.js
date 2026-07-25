@@ -7,7 +7,7 @@ const orderSchema = new mongoose.Schema(
   {
     ticketListing: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "TicketListing",
+      ref: "TicketingListing",
       required: true,
     },
     buyer: {
