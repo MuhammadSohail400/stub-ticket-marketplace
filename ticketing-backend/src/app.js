@@ -37,7 +37,34 @@ app.use(express.json());
 
 // Strip any keys containing `$` or `.` from req.body, req.query, and
 // req.params to block NoSQL injection attempts.
-app.use(mongoSanitize());
+//
+// NOTE: express-mongo-sanitize's built-in middleware does `req.query = <sanitized>`
+// internally. In Express 5, `req.query` is a getter-only accessor defined on the
+// request prototype (see express/lib/request.js) with no setter, so that plain
+// assignment throws:
+//   "Cannot set property query of #<IncomingMessage> which has only a getter"
+// Also, that getter re-parses the query string from req.url on *every* access
+// (it isn't cached), so simply sanitizing the object in place isn't enough either —
+// any later `req.query` read would just re-parse the original, unsanitized string.
+// The fix: read req.query once, sanitize that snapshot, then shadow the prototype
+// getter with an own, writable data property on this request instance via
+// Object.defineProperty (the prototype getter is `configurable: true`, so this is
+// allowed) — that's what express-mongo-sanitize itself relies on for Express 4 and
+// what we have to do explicitly here for Express 5.
+app.use((req, res, next) => {
+  if (req.body) mongoSanitize.sanitize(req.body);
+  if (req.params) mongoSanitize.sanitize(req.params);
+  if (req.query) {
+    const sanitizedQuery = mongoSanitize.sanitize({ ...req.query });
+    Object.defineProperty(req, "query", {
+      value: sanitizedQuery,
+      writable: true,
+      configurable: true,
+      enumerable: true,
+    });
+  }
+  next();
+});
 
 app.use(morgan("dev"));
 
