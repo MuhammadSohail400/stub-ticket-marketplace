@@ -17,6 +17,12 @@ export default function SignupPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
+
+    if (password.length < 8) {
+      setError("Password must be at least 8 characters long.");
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -69,12 +75,13 @@ export default function SignupPage() {
           <input
             type="password"
             required
-            minLength={6}
+            minLength={8}
             className="input"
-            placeholder="••••••••"
+            placeholder="At least 8 characters"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
+          <span className="text-[11px] text-muted">Minimum 8 characters</span>
         </label>
 
         <div className="flex flex-col gap-1.5">

@@ -1,9 +1,10 @@
 import { TicketListing } from "@/types";
+export { formatPKR, formatEventDate } from "./utils";
 
-// NOTE: Events are now fetched from the real backend — see lib/events.ts.
-// This file still simulates /api/listings until Phase F4 connects that
-// too. Swap the getters below for real axios calls without changing any
-// component code.
+/**
+ * Legacy mock listings file retained for fallback testing.
+ * All live components now interact with the real backend API services in lib/events.ts, lib/listings.ts, lib/orders.ts, and lib/transfers.ts.
+ */
 
 export const listings: TicketListing[] = [
   {
@@ -28,50 +29,6 @@ export const listings: TicketListing[] = [
     quantity: 1,
     status: "listed",
   },
-  {
-    id: "lst-003",
-    eventId: "evt-atif-karachi",
-    seller: { id: "u3", name: "Bilal M.", verified: false, trustScore: 3.9, salesCompleted: 2 },
-    section: "Gold Enclosure",
-    seatInfo: "Row F, Seat 4",
-    price: 7000,
-    faceValue: 6000,
-    quantity: 1,
-    status: "reserved",
-  },
-  {
-    id: "lst-004",
-    eventId: "evt-psl-final",
-    seller: { id: "u4", name: "Sara N.", verified: true, trustScore: 5.0, salesCompleted: 41 },
-    section: "Premium Stand",
-    seatInfo: "Block D, Row 2",
-    price: 5500,
-    faceValue: 5000,
-    quantity: 4,
-    status: "listed",
-  },
-  {
-    id: "lst-005",
-    eventId: "evt-psl-final",
-    seller: { id: "u5", name: "Usman T.", verified: true, trustScore: 4.2, salesCompleted: 8 },
-    section: "General Stand",
-    seatInfo: "Block A",
-    price: 3000,
-    faceValue: 3000,
-    quantity: 2,
-    status: "listed",
-  },
-  {
-    id: "lst-006",
-    eventId: "evt-coke-fest",
-    seller: { id: "u6", name: "Zara F.", verified: true, trustScore: 4.6, salesCompleted: 15 },
-    section: "VIP Deck",
-    seatInfo: "Standing, VIP zone",
-    price: 5200,
-    faceValue: 4000,
-    quantity: 1,
-    status: "listed",
-  },
 ];
 
 export function getListingsForEvent(eventId: string): TicketListing[] {
@@ -80,17 +37,4 @@ export function getListingsForEvent(eventId: string): TicketListing[] {
 
 export function getListingById(id: string): TicketListing | undefined {
   return listings.find((l) => l.id === id);
-}
-
-export function formatPKR(amount: number): string {
-  return `Rs ${amount.toLocaleString("en-PK")}`;
-}
-
-export function formatEventDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("en-GB", {
-    weekday: "short",
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
 }

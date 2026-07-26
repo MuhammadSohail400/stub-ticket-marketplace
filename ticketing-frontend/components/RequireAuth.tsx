@@ -4,24 +4,17 @@ import { ReactNode, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/AuthContext";
 
-// Concept: this is a reusable "guard" component — wrap any page's
-// content with <RequireAuth> and it handles the "must be logged in"
-// (and optionally "must have this role") check in one place, instead
-// of repeating the same useEffect/redirect logic on every protected page.
 export default function RequireAuth({
   children,
   requireRole,
 }: {
   children: ReactNode;
-  requireRole?: "buyer" | "seller";
+  requireRole?: "buyer" | "seller" | "admin";
 }) {
   const { user, loading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    // Concept: we only redirect once `loading` is false — redirecting
-    // while still loading would incorrectly bounce an already-logged-in
-    // user to /login for a split second before their session is checked.
     if (!loading && !user) {
       router.push("/login");
     }
@@ -29,25 +22,32 @@ export default function RequireAuth({
 
   if (loading) {
     return (
-      <div className="mx-auto max-w-xl px-5 py-24 text-center text-muted text-sm">
-        Loading...
+      <div className="mx-auto max-w-xl px-5 py-24 text-center text-muted text-sm flex items-center justify-center gap-2">
+        <span className="w-4 h-4 border-2 border-ink border-t-transparent rounded-full animate-spin" />
+        Checking authentication...
       </div>
     );
   }
 
   if (!user) {
-    // Concept: redirect is already in-flight (from the useEffect above);
-    // we render nothing rather than the protected content for that
-    // brief moment.
     return null;
   }
 
   if (requireRole && user.role !== requireRole && user.role !== "admin") {
     return (
       <div className="mx-auto max-w-xl px-5 py-24 text-center">
-        <p className="text-muted text-sm">
-          This page is only available to accounts with the &quot;{requireRole}&quot; role.
-        </p>
+        <div className="rounded-xl border border-line bg-white p-8 shadow-sm">
+          <p className="text-danger font-semibold text-lg mb-2">Access Restricted</p>
+          <p className="text-muted text-sm">
+            This section requires an account with the &quot;{requireRole}&quot; role.
+          </p>
+          <button
+            onClick={() => router.push("/")}
+            className="mt-6 font-semibold bg-ink text-paper rounded-md px-5 py-2 text-sm hover:bg-stamp hover:text-ink transition-colors"
+          >
+            Return Home
+          </button>
+        </div>
       </div>
     );
   }

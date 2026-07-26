@@ -1,22 +1,27 @@
 import api from "./api";
-import { TicketListing } from "@/types";
+import { TicketListing, PaginatedResult } from "@/types";
 
-// Concept: same adapter pattern as lib/events.ts — the backend's raw
-// shape (populated event/seller sub-documents, Mongo _id) gets mapped
-// into the shape our components already expect.
 function mapListing(raw: any): TicketListing {
   return {
-    id: raw._id,
-    eventId: typeof raw.event === "string" ? raw.event : raw.event?._id,
+    id: raw._id || raw.id,
+    eventId: typeof raw.event === "string" ? raw.event : (raw.event?._id || raw.event?.id),
+    event: raw.event && typeof raw.event === "object"
+      ? {
+          id: raw.event._id || raw.event.id,
+          title: raw.event.title,
+          category: raw.event.category,
+          venue: raw.event.venue,
+          city: raw.event.city,
+          eventDate: raw.event.eventDate,
+          bannerImage: raw.event.bannerImage,
+        }
+      : undefined,
     seller: {
-      id: raw.seller?._id,
-      name: raw.seller?.name,
-      // Concept: our backend's populate("seller", "name email") only
-      // sends back name/email — verified/trustScore/salesCompleted were
-      // mock-only convenience fields. Left undefined here; components
-      // already handle that gracefully (see types/index.ts).
-      verified: false,
-      trustScore: 0,
+      id: raw.seller?._id || raw.seller?.id,
+      name: raw.seller?.name || "Seller",
+      email: raw.seller?.email,
+      verified: raw.seller?.isVerified ?? false,
+      trustScore: raw.seller?.trustScore ?? 0,
       salesCompleted: 0,
     },
     section: raw.section,
@@ -24,30 +29,62 @@ function mapListing(raw: any): TicketListing {
     price: raw.price,
     faceValue: raw.faceValue,
     quantity: raw.quantity,
+    proofImage: raw.proofImage,
     status: raw.status,
+    createdAt: raw.createdAt,
   };
+}
+
+export interface ListingFilters {
+  event?: string;
+  page?: number;
+  limit?: number;
 }
 
 export async function getListingsForEvent(eventId: string): Promise<TicketListing[]> {
   const { data } = await api.get("/listings", { params: { event: eventId } });
-  return data.listings.map(mapListing);
+  const rawList = Array.isArray(data.listings) ? data.listings : [];
+  return rawList.map(mapListing);
+}
+
+export async function getPaginatedListings(
+  filters?: ListingFilters
+): Promise<PaginatedResult<TicketListing>> {
+  const { data } = await api.get("/listings", { params: filters });
+  const rawList = Array.isArray(data.listings) ? data.listings : [];
+  return {
+    success: data.success ?? true,
+    total: data.total ?? rawList.length,
+    page: data.page ?? 1,
+    pages: data.pages ?? 1,
+    items: rawList.map(mapListing),
+  };
 }
 
 export async function getListingById(id: string): Promise<TicketListing | null> {
   try {
     const { data } = await api.get(`/listings/${id}`);
+    if (!data.listing) return null;
     return mapListing(data.listing);
   } catch (error) {
     return null;
   }
 }
 
-// Concept: this takes a FormData object (not a plain object) because
-// the backend now expects multipart/form-data — it contains a real
-// File for proofImage alongside the text fields.
 export async function createListing(formData: FormData): Promise<TicketListing> {
   const { data } = await api.post("/listings", formData, {
     headers: { "Content-Type": "multipart/form-data" },
   });
   return mapListing(data.listing);
+}
+
+export async function updateListing(id: string, formData: FormData): Promise<TicketListing> {
+  const { data } = await api.put(`/listings/${id}`, formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+  return mapListing(data.listing);
+}
+
+export async function deleteListing(id: string): Promise<void> {
+  await api.delete(`/listings/${id}`);
 }
